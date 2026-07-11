@@ -40,7 +40,7 @@ Todas son opcionales y con planes gratuitos. Colócalas en `.env`:
 | Variable | Dónde obtenerla | Notas |
 |---|---|---|
 | `NEWS_API_KEY` | https://newsapi.org/register | Plan Developer gratuito |
-| `YOUTUBE_API_KEY` | https://console.cloud.google.com → *YouTube Data API v3* | Activa la API y crea una clave |
+| `YOUTUBE_API_KEY` | https://console.cloud.google.com → *YouTube Data API v3* | Opcional: sin ella se usan Piped/Invidious (frontends abiertos) |
 | `REDDIT_CLIENT_ID` / `REDDIT_CLIENT_SECRET` | https://www.reddit.com/prefs/apps → app tipo *script* | Opcional: sin ellas se usa el endpoint público `.json` |
 | `HF_TOKEN` | https://huggingface.co/settings/tokens | Opcional: sin él se usa un léxico local para el sentimiento |
 | *Google Trends* | — | No requiere clave (vía `google-trends-api`) |
@@ -66,7 +66,7 @@ hay clave, pasa a una alternativa y por último a datos demo deterministas.
 | Tendencias | Google Trends | **Wikipedia Pageviews** | Demo |
 | Noticias | NewsAPI *(con clave)* | **Google News RSS** | Demo |
 | Reddit | Reddit OAuth *(con clave)* | Reddit público `.json` | Demo |
-| YouTube | YouTube Data API *(requiere clave)* | — | Demo |
+| YouTube | YouTube Data API *(con clave)* | **Piped / Invidious** (frontends abiertos) | Demo |
 | Sentimiento | Hugging Face *(con `HF_TOKEN`)* | **Léxico local ES/EN** | Demo |
 
 > **Sobre Hugging Face:** sus *datasets* son estáticos (no en tiempo real), así
@@ -75,9 +75,14 @@ hay clave, pasa a una alternativa y por último a datos demo deterministas.
 > *interpretar* los titulares y hilos que ya se obtienen en vivo. Sin token,
 > un léxico local hace el mismo trabajo de forma aproximada y sin instalar nada.
 
-Así el dashboard muestra **datos reales sin ninguna API key** en tres de las
-cuatro secciones (solo YouTube requiere clave). Cada panel indica su fuente
-real: `● Google Trends`, `● Wikipedia`, `● NewsAPI`, `● Google News`, etc.
+Así el dashboard muestra **datos reales sin ninguna API key** en las cinco
+secciones. Cada panel indica su fuente real: `● Google Trends`, `● Wikipedia`,
+`● NewsAPI`, `● Google News`, `● Piped`, `● Léxico local`, etc.
+
+> **Nota sobre Piped/Invidious:** son frontends abiertos de YouTube con
+> instancias públicas que van y vienen; el proveedor prueba varias en paralelo
+> y usa la primera que responde. Para máxima estabilidad, agrega tu
+> `YOUTUBE_API_KEY` (oficial) y estos quedan solo como respaldo.
 
 ### Endpoints
 
