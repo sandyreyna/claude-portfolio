@@ -54,6 +54,7 @@ async function loadStatus() {
     const items = [
       ['Google Trends', s.trends], ['NewsAPI', s.news],
       ['Reddit', s.reddit], ['YouTube', s.youtube],
+      ['Hugging Face', s.sentiment],
     ];
     for (const [name, live] of items) {
       const p = el('span', `status-pill ${live ? 'live' : 'demo'}`,
@@ -107,6 +108,7 @@ function render(data) {
   renderTrends(data.trends);
   renderNews(data.news);
   renderReddit(data.reddit);
+  renderSentiment(data.sentiment);
   renderYouTube(data.youtube);
 }
 
@@ -239,6 +241,76 @@ function renderReddit(rd) {
       `<div class="reddit-comments"><b>${fmtNum(post.comments)}</b><span>coment.</span></div>`;
     list.appendChild(item);
   });
+}
+
+// 5. Sentimiento
+const SENTI = {
+  positivo: { color: '#22c55e', emoji: '😊' },
+  neutro: { color: '#94a3b8', emoji: '😐' },
+  negativo: { color: '#ef4444', emoji: '😟' },
+};
+function renderSentiment(s) {
+  const p = panel('sentiment');
+  if (!s) return;
+  $('.src-badge', p).outerHTML = badge(s.source, s.provider);
+
+  // Gauge (semicírculo -1 .. +1)
+  drawGauge($('.gauge', p), s.overall?.score ?? 0);
+  const lbl = s.overall?.label || 'neutro';
+  $('.gauge-label strong', p).textContent = `${SENTI[lbl].emoji} ${lbl}`;
+  $('.gauge-label strong', p).style.color = SENTI[lbl].color;
+  $('.gauge-label span', p).textContent = `${s.total || 0} menciones analizadas`;
+
+  // Desglose
+  const bd = s.breakdown || { positivo: 0, neutro: 0, negativo: 0 };
+  const total = Math.max(1, (bd.positivo || 0) + (bd.neutro || 0) + (bd.negativo || 0));
+  const bars = $('.senti-bars', p);
+  bars.innerHTML = '';
+  ['positivo', 'neutro', 'negativo'].forEach((k) => {
+    const pct = Math.round((bd[k] || 0) / total * 100);
+    bars.appendChild(el('div', 'senti-bar',
+      `<span class="senti-tag">${SENTI[k].emoji} ${k}</span>` +
+      `<span class="senti-track"><span class="senti-fill" style="width:${pct}%;background:${SENTI[k].color}"></span></span>` +
+      `<span class="senti-pct">${bd[k] || 0}</span>`));
+  });
+
+  // Menciones destacadas
+  const m = $('.senti-mentions', p);
+  m.innerHTML = '';
+  if (s.mostPositive) m.appendChild(el('div', 'senti-quote pos',
+    `<span>😊 Más positiva</span><p>${esc(s.mostPositive.text)}</p>`));
+  if (s.mostNegative) m.appendChild(el('div', 'senti-quote neg',
+    `<span>😟 Más negativa</span><p>${esc(s.mostNegative.text)}</p>`));
+  if (!s.mostPositive && !s.mostNegative) m.appendChild(el('div', 'senti-quote',
+    `<p>Sin menciones con carga emocional marcada.</p>`));
+}
+
+function drawGauge(svg, score) {
+  svg.innerHTML = '';
+  const cx = 100, cy = 100, r = 82, w = 20;
+  const pt = (deg) => {
+    const rad = (deg * Math.PI) / 180;
+    return [cx + r * Math.cos(rad), cy - r * Math.sin(rad)];
+  };
+  const zone = (a, b, color) => {
+    const [x0, y0] = pt(a), [x1, y1] = pt(b);
+    svg.appendChild(svgEl('path', {
+      d: `M${x0},${y0} A${r},${r} 0 0 1 ${x1},${y1}`,
+      fill: 'none', stroke: color, 'stroke-width': w, 'stroke-linecap': 'round',
+    }));
+  };
+  // 180°(izq/neg) → 0°(der/pos)
+  zone(179, 122, '#ef4444');
+  zone(120, 62, '#94a3b8');
+  zone(60, 1, '#22c55e');
+
+  // Aguja: score -1..+1  →  180°..0°
+  const clamped = Math.max(-1, Math.min(1, score));
+  const deg = 90 - clamped * 90;
+  const [nx, ny] = (() => { const rad = deg * Math.PI / 180; return [cx + (r - 6) * Math.cos(rad), cy - (r - 6) * Math.sin(rad)]; })();
+  svg.appendChild(svgEl('line', { x1: cx, y1: cy, x2: nx, y2: ny,
+    stroke: 'var(--ink)', 'stroke-width': 3, 'stroke-linecap': 'round' }));
+  svg.appendChild(svgEl('circle', { cx, cy, r: 6, fill: 'var(--ink)' }));
 }
 
 // 4. YouTube

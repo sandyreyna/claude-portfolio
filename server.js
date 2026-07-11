@@ -12,6 +12,7 @@ import { getTrends } from './src/providers/trends.js';
 import { getNews } from './src/providers/news.js';
 import { getReddit } from './src/providers/reddit.js';
 import { getYouTube } from './src/providers/youtube.js';
+import { getSentiment } from './src/providers/sentiment.js';
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 
@@ -71,7 +72,15 @@ app.get('/api/all', wrap(async (req, keyword) => {
     getReddit({ keyword }),
     getYouTube({ keyword, region }),
   ]);
-  return { keyword, trends, news, reddit, youtube };
+
+  // Sentimiento sobre los titulares de noticias + hilos de Reddit ya obtenidos.
+  const entries = [
+    ...(news.articles || []).map((a) => ({ text: a.title, from: a.source || 'Noticias' })),
+    ...(reddit.posts || []).map((p) => ({ text: p.title, from: p.subreddit || 'Reddit' })),
+  ];
+  const sentiment = await getSentiment(entries);
+
+  return { keyword, trends, news, reddit, youtube, sentiment };
 }));
 
 // Estado de configuración (qué APIs están en vivo).
@@ -81,6 +90,7 @@ app.get('/api/status', (_req, res) => {
     youtube: Boolean(process.env.YOUTUBE_API_KEY),
     reddit: Boolean(process.env.REDDIT_CLIENT_ID && process.env.REDDIT_CLIENT_SECRET),
     trends: true,
+    sentiment: Boolean(process.env.HF_TOKEN),
   });
 });
 

@@ -9,6 +9,7 @@ vista. Ingresas una palabra clave y obtienes:
 | 📰 **Noticias del sector** | NewsAPI | Últimos artículos sobre el término |
 | 💬 **Temas más comentados** | Reddit | Publicaciones ordenadas por número de comentarios |
 | ▶️ **Videos más populares** | YouTube Data API | Videos ordenados por visualizaciones |
+| 😊 **Sentimiento del mercado** | Hugging Face | Ánimo (positivo/neutro/negativo) sobre titulares y hilos |
 
 Diseño responsive, modo claro/oscuro y gráficos dibujados en SVG nativo
 (sin librerías de terceros en el navegador).
@@ -41,6 +42,7 @@ Todas son opcionales y con planes gratuitos. Colócalas en `.env`:
 | `NEWS_API_KEY` | https://newsapi.org/register | Plan Developer gratuito |
 | `YOUTUBE_API_KEY` | https://console.cloud.google.com → *YouTube Data API v3* | Activa la API y crea una clave |
 | `REDDIT_CLIENT_ID` / `REDDIT_CLIENT_SECRET` | https://www.reddit.com/prefs/apps → app tipo *script* | Opcional: sin ellas se usa el endpoint público `.json` |
+| `HF_TOKEN` | https://huggingface.co/settings/tokens | Opcional: sin él se usa un léxico local para el sentimiento |
 | *Google Trends* | — | No requiere clave (vía `google-trends-api`) |
 
 ---
@@ -65,6 +67,13 @@ hay clave, pasa a una alternativa y por último a datos demo deterministas.
 | Noticias | NewsAPI *(con clave)* | **Google News RSS** | Demo |
 | Reddit | Reddit OAuth *(con clave)* | Reddit público `.json` | Demo |
 | YouTube | YouTube Data API *(requiere clave)* | — | Demo |
+| Sentimiento | Hugging Face *(con `HF_TOKEN`)* | **Léxico local ES/EN** | Demo |
+
+> **Sobre Hugging Face:** sus *datasets* son estáticos (no en tiempo real), así
+> que no alimentan los paneles; lo que se usa es un **modelo** de sentimiento
+> (`cardiffnlp/twitter-xlm-roberta-base-sentiment`) vía Inference API para
+> *interpretar* los titulares y hilos que ya se obtienen en vivo. Sin token,
+> un léxico local hace el mismo trabajo de forma aproximada y sin instalar nada.
 
 Así el dashboard muestra **datos reales sin ninguna API key** en tres de las
 cuatro secciones (solo YouTube requiere clave). Cada panel indica su fuente

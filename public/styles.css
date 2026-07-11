@@ -112,6 +112,7 @@ button.primary:disabled { opacity: .6; cursor: wait; }
 .dot { width: 10px; height: 10px; border-radius: 50%; }
 .dot-1 { background: var(--c1); } .dot-2 { background: var(--c2); }
 .dot-3 { background: var(--c3); } .dot-4 { background: var(--c4); }
+.dot-5 { background: #22c55e; }
 .src-badge {
   font-size: 11px; padding: 3px 9px; border-radius: 20px; font-weight: 600; letter-spacing: .02em;
 }
@@ -182,6 +183,26 @@ button.primary:disabled { opacity: .6; cursor: wait; }
 .video-card .meta { font-size: 11px; color: var(--ink-soft); }
 .video-card:hover h4 { color: var(--c4); }
 
+/* Sentimiento */
+.senti-body { display: grid; grid-template-columns: 240px 1fr; gap: 26px; align-items: center; }
+.gauge-wrap { text-align: center; }
+.gauge { width: 220px; height: 130px; }
+.gauge-label strong { display: block; font-size: 19px; text-transform: capitalize; }
+.gauge-label span { font-size: 11.5px; color: var(--ink-soft); }
+.senti-breakdown { display: grid; grid-template-columns: 1fr 1fr; gap: 18px; align-items: center; }
+.senti-bars { display: flex; flex-direction: column; gap: 10px; }
+.senti-bar { display: grid; grid-template-columns: 96px 1fr 28px; align-items: center; gap: 8px; font-size: 12.5px; }
+.senti-tag { text-transform: capitalize; color: var(--ink-soft); }
+.senti-track { height: 9px; background: var(--panel-2); border: 1px solid var(--line); border-radius: 6px; overflow: hidden; }
+.senti-fill { display: block; height: 100%; border-radius: 6px; transition: width .5s ease; }
+.senti-pct { text-align: right; font-variant-numeric: tabular-nums; font-weight: 600; }
+.senti-mentions { display: flex; flex-direction: column; gap: 10px; }
+.senti-quote { padding: 10px 12px; border-radius: 10px; background: var(--panel-2); border-left: 3px solid var(--line); }
+.senti-quote.pos { border-left-color: #22c55e; }
+.senti-quote.neg { border-left-color: #ef4444; }
+.senti-quote span { font-size: 11px; color: var(--ink-soft); font-weight: 600; }
+.senti-quote p { margin: 3px 0 0; font-size: 12.5px; line-height: 1.35; }
+
 /* Foot & misc */
 .foot { display: flex; justify-content: space-between; margin-top: 28px; font-size: 12px; color: var(--ink-soft); }
 .loading { text-align: center; padding: 60px; color: var(--ink-soft); }
@@ -198,4 +219,6 @@ button.primary:disabled { opacity: .6; cursor: wait; }
   .span-2 { grid-column: span 1; }
   .trends-body { grid-template-columns: 1fr; }
   .video-grid { grid-template-columns: repeat(2, 1fr); }
+  .senti-body { grid-template-columns: 1fr; }
+  .senti-breakdown { grid-template-columns: 1fr; }
 }

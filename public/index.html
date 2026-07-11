@@ -57,7 +57,7 @@
     </main>
 
     <footer class="foot">
-      <span>Datos: Google Trends · NewsAPI · Reddit · YouTube</span>
+      <span>Datos: Google Trends · NewsAPI · Reddit · YouTube · Hugging Face</span>
       <span id="genTime"></span>
     </footer>
   </div>
@@ -98,6 +98,24 @@
           <span class="src-badge"></span>
         </div>
         <ul class="reddit-list scroll"></ul>
+      </article>
+
+      <!-- 5. Sentimiento -->
+      <article class="panel span-2" data-panel="sentiment">
+        <div class="panel-head">
+          <h3><span class="dot dot-5"></span>Sentimiento del mercado</h3>
+          <span class="src-badge"></span>
+        </div>
+        <div class="senti-body">
+          <div class="gauge-wrap">
+            <svg class="gauge" viewBox="0 0 200 118"></svg>
+            <div class="gauge-label"><strong></strong><span></span></div>
+          </div>
+          <div class="senti-breakdown">
+            <div class="senti-bars"></div>
+            <div class="senti-mentions"></div>
+          </div>
+        </div>
       </article>
 
       <!-- 4. YouTube -->
