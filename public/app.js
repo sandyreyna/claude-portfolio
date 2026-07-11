@@ -119,7 +119,7 @@ function renderTrends(t) {
   const p = panel('trends');
   $('.src-badge', p).outerHTML = badge(t.source, t.provider);
   drawLineChart($('.line-chart', p), t.timeline || []);
-  drawDonut($('.donut', p), t.related || []);
+  drawPetals($('.donut', p), t.related || []);
 
   const total = (t.related || []).length;
   $('.donut-center strong', p).textContent = total;
@@ -167,35 +167,62 @@ function drawLineChart(svg, points) {
     fill: '#fff', stroke: '#6366f1', 'stroke-width': 2.5 }));
 }
 
-function drawDonut(svg, related) {
+// Gráfico de pétalos radiales: cada búsqueda relacionada es un pétalo cuya
+// longitud es proporcional a su valor. Mantiene la paleta definida (PALETTE).
+function drawPetals(svg, related) {
   svg.innerHTML = '';
-  const cx = 100, cy = 100, r = 74, w = 26;
+  const cx = 100, cy = 100, inner = 36, maxOuter = 84;
   const items = (related || []).slice(0, 8);
-  const total = items.reduce((s, x) => s + (Number(x.value) || 0), 0) || 1;
-  let a0 = -Math.PI / 2;
-  items.forEach((it, i) => {
-    const frac = (Number(it.value) || 0) / total;
-    const a1 = a0 + frac * Math.PI * 2;
-    svg.appendChild(svgEl('path', {
-      d: arc(cx, cy, r, a0, a1),
-      fill: 'none', stroke: PALETTE[i % PALETTE.length], 'stroke-width': w,
-    }));
-    a0 = a1;
-  });
+
   if (!items.length) {
-    svg.appendChild(svgEl('circle', { cx, cy, r, fill: 'none',
-      stroke: 'var(--line)', 'stroke-width': w }));
+    svg.appendChild(svgEl('circle', { cx, cy, r: inner, fill: 'none',
+      stroke: 'var(--line)', 'stroke-width': 2 }));
+    return;
   }
+
+  const maxVal = Math.max(...items.map((i) => Number(i.value) || 0), 1);
+  const N = items.length;
+  const gap = 0.12; // separación angular entre pétalos (rad)
+
+  items.forEach((it, i) => {
+    const a0 = (i / N) * 2 * Math.PI + gap / 2 - Math.PI / 2;
+    const a1 = ((i + 1) / N) * 2 * Math.PI - gap / 2 - Math.PI / 2;
+    const val = Number(it.value) || 0;
+    const r1 = inner + (val / maxVal) * (maxOuter - inner);
+    const color = PALETTE[i % PALETTE.length];
+
+    const path = svgEl('path', { d: annularSector(cx, cy, inner, r1, a0, a1),
+      fill: color, class: 'petal', 'stroke-linejoin': 'round' });
+    const tip = svgEl('title', {});
+    tip.textContent = `${it.query}: ${it.value}`;
+    path.appendChild(tip);
+    svg.appendChild(path);
+
+    // valor en la punta del pétalo, en su color
+    const mid = (a0 + a1) / 2;
+    svg.appendChild(Object.assign(
+      svgEl('text', {
+        x: cx + (r1 + 9) * Math.cos(mid), y: cy + (r1 + 9) * Math.sin(mid),
+        'text-anchor': 'middle', 'dominant-baseline': 'central',
+        'font-size': 9, 'font-weight': 700, fill: color,
+      }),
+      { textContent: it.value },
+    ));
+  });
+
+  // hub central (sobre él va el overlay .donut-center con el conteo)
+  svg.appendChild(svgEl('circle', { cx, cy, r: inner - 3,
+    fill: 'var(--panel)', stroke: 'var(--line)', 'stroke-width': 1.5 }));
 }
 
-function arc(cx, cy, r, a0, a1) {
-  const gap = 0.03;
-  a0 += gap; a1 -= gap;
-  if (a1 < a0) a1 = a0;
-  const x0 = cx + r * Math.cos(a0), y0 = cy + r * Math.sin(a0);
-  const x1 = cx + r * Math.cos(a1), y1 = cy + r * Math.sin(a1);
+// Sector anular (pétalo con hueco central) entre radios r0..r1 y ángulos a0..a1.
+function annularSector(cx, cy, r0, r1, a0, a1) {
+  const p = (r, a) => [cx + r * Math.cos(a), cy + r * Math.sin(a)];
+  const [x0, y0] = p(r0, a0), [x1, y1] = p(r1, a0);
+  const [x2, y2] = p(r1, a1), [x3, y3] = p(r0, a1);
   const large = a1 - a0 > Math.PI ? 1 : 0;
-  return `M${x0},${y0} A${r},${r} 0 ${large} 1 ${x1},${y1}`;
+  return `M${x0},${y0} L${x1},${y1} A${r1},${r1} 0 ${large} 1 ${x2},${y2} ` +
+         `L${x3},${y3} A${r0},${r0} 0 ${large} 0 ${x0},${y0} Z`;
 }
 
 function svgEl(tag, attrs) {

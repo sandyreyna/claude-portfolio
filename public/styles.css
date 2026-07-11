@@ -135,8 +135,11 @@ button.primary:disabled { opacity: .6; cursor: wait; }
 .donut-center {
   position: absolute; inset: 0; display: grid; place-content: center; text-align: center; line-height: 1.15;
 }
-.donut-center strong { font-size: 26px; display: block; }
-.donut-center span { font-size: 10px; color: var(--ink-soft); }
+.donut-center strong { font-size: 17px; display: block; line-height: 1; }
+.donut-center span { font-size: 8.5px; color: var(--ink-soft); text-transform: uppercase; letter-spacing: .04em; }
+.petal { transition: opacity .15s ease; cursor: default; }
+.donut:hover .petal { opacity: .4; }
+.donut .petal:hover { opacity: 1; }
 .related-list { list-style: none; margin: 0; padding: 0; flex: 1; min-width: 0; }
 .related-list li {
   display: flex; align-items: center; gap: 8px; font-size: 12.5px; padding: 3px 0; color: var(--ink-soft);
