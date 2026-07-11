@@ -1,0 +1,18 @@
+{
+  "name": "marketing-intelligence-dashboard",
+  "version": "1.0.0",
+  "description": "Dashboard de Marketing Intelligence que agrega Google Trends, NewsAPI, Reddit y YouTube en una sola vista.",
+  "type": "module",
+  "main": "server.js",
+  "scripts": {
+    "start": "node server.js",
+    "dev": "node --watch server.js"
+  },
+  "engines": {
+    "node": ">=18"
+  },
+  "dependencies": {
+    "express": "^4.19.2",
+    "google-trends-api": "^4.9.2"
+  }
+}
