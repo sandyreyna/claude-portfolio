@@ -27,9 +27,13 @@ function timeAgo(iso) {
   if (s < 86400) return `hace ${Math.round(s / 3600)} h`;
   return `hace ${Math.round(s / 86400)} d`;
 }
-const badge = (src) => {
+const badge = (src, provider) => {
   const live = src && src.startsWith('live');
-  return `<span class="src-badge ${live ? 'live' : 'demo'}">${live ? '● en vivo' : '◐ demo'}</span>`;
+  const label = live ? `● ${provider || 'en vivo'}` : '◐ demo';
+  const title = live
+    ? `Datos en vivo desde ${provider || 'la API'}`
+    : 'Datos de demostración (fuente no disponible o sin clave)';
+  return `<span class="src-badge ${live ? 'live' : 'demo'}" title="${esc(title)}">${esc(label)}</span>`;
 };
 
 // ── Theme ─────────────────────────────────────────────
@@ -111,7 +115,7 @@ function panel(name) { return document.querySelector(`[data-panel="${name}"]`); 
 // 1. Trends
 function renderTrends(t) {
   const p = panel('trends');
-  $('.src-badge', p).outerHTML = badge(t.source);
+  $('.src-badge', p).outerHTML = badge(t.source, t.provider);
   drawLineChart($('.line-chart', p), t.timeline || []);
   drawDonut($('.donut', p), t.related || []);
 
@@ -201,7 +205,7 @@ function svgEl(tag, attrs) {
 // 2. News
 function renderNews(n) {
   const p = panel('news');
-  $('.src-badge', p).outerHTML = badge(n.source);
+  $('.src-badge', p).outerHTML = badge(n.source, n.provider);
   const list = $('.news-list', p);
   list.innerHTML = '';
   (n.articles || []).slice(0, 10).forEach((a) => {
@@ -221,7 +225,7 @@ function renderNews(n) {
 // 3. Reddit
 function renderReddit(rd) {
   const p = panel('reddit');
-  $('.src-badge', p).outerHTML = badge(rd.source);
+  $('.src-badge', p).outerHTML = badge(rd.source, rd.provider || 'Reddit');
   const list = $('.reddit-list', p);
   list.innerHTML = '';
   (rd.posts || []).slice(0, 10).forEach((post, i) => {
@@ -240,7 +244,7 @@ function renderReddit(rd) {
 // 4. YouTube
 function renderYouTube(yt) {
   const p = panel('youtube');
-  $('.src-badge', p).outerHTML = badge(yt.source);
+  $('.src-badge', p).outerHTML = badge(yt.source, yt.provider || 'YouTube');
   const grid = $('.video-grid', p);
   grid.innerHTML = '';
   (yt.videos || []).slice(0, 9).forEach((v) => {

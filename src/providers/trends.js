@@ -1,10 +1,13 @@
-// Google Trends — tendencias de búsqueda.
-// Usa el paquete google-trends-api (scraping oficial de Google, sin clave).
-// Si falla o no hay red, devuelve datos de demostración.
+// Tendencias de búsqueda — con cadena de fallback:
+//   1) Google Trends (google-trends-api, sin clave)
+//   2) Wikipedia Pageviews (alternativa real, sin clave)
+//   3) Datos de demostración
 import googleTrends from 'google-trends-api';
+import { getWikipediaTrends } from './wikipedia.js';
 import { seeded } from '../util/mock.js';
 
 export async function getTrends({ keyword, geo = '', hl = 'es' }) {
+  // 1) Google Trends
   try {
     const [interestRaw, relatedRaw] = await Promise.all([
       googleTrends.interestOverTime({ keyword, geo, hl }),
@@ -32,9 +35,25 @@ export async function getTrends({ keyword, geo = '', hl = 'es' }) {
 
     if (!timeline.length) throw new Error('sin datos de timeline');
 
-    return { source: 'live', keyword, geo, timeline, related };
-  } catch (err) {
-    return mockTrends({ keyword, geo, reason: err.message });
+    return { source: 'live', provider: 'Google Trends', keyword, geo, timeline, related };
+  } catch (googleErr) {
+    // 2) Wikipedia (alternativa real sin clave)
+    try {
+      const wiki = await getWikipediaTrends({ keyword, hl });
+      return {
+        source: 'live-wikipedia',
+        provider: 'Wikipedia',
+        keyword,
+        geo,
+        article: wiki.article,
+        timeline: wiki.timeline,
+        related: wiki.related,
+        note: `Google Trends no disponible (${googleErr.message}); usando Wikipedia.`,
+      };
+    } catch (wikiErr) {
+      // 3) Demo
+      return mockTrends({ keyword, geo, reason: `${googleErr.message} · ${wikiErr.message}` });
+    }
   }
 }
 
@@ -56,5 +75,5 @@ function mockTrends({ keyword, geo, reason }) {
     value: Math.round(20 + rnd() * 80),
   })).sort((a, b) => b.value - a.value);
 
-  return { source: 'mock', keyword, geo, timeline, related, note: reason };
+  return { source: 'mock', provider: 'Demo', keyword, geo, timeline, related, note: reason };
 }

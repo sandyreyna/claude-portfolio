@@ -55,7 +55,20 @@ Navegador (public/)  ──►  Express (server.js)  ──►  APIs externas
 El backend actúa de **proxy**: las claves nunca llegan al navegador y se
 resuelven los bloqueos de CORS de NewsAPI, Reddit y Google Trends. Cada
 proveedor (`src/providers/*.js`) intenta una llamada en vivo y, si falla o no
-hay clave, devuelve datos de demostración deterministas.
+hay clave, pasa a una alternativa y por último a datos demo deterministas.
+
+### Cadena de fallback por fuente
+
+| Sección | 1º (principal) | 2º (alternativa sin clave) | 3º |
+|---|---|---|---|
+| Tendencias | Google Trends | **Wikipedia Pageviews** | Demo |
+| Noticias | NewsAPI *(con clave)* | **Google News RSS** | Demo |
+| Reddit | Reddit OAuth *(con clave)* | Reddit público `.json` | Demo |
+| YouTube | YouTube Data API *(requiere clave)* | — | Demo |
+
+Así el dashboard muestra **datos reales sin ninguna API key** en tres de las
+cuatro secciones (solo YouTube requiere clave). Cada panel indica su fuente
+real: `● Google Trends`, `● Wikipedia`, `● NewsAPI`, `● Google News`, etc.
 
 ### Endpoints
 

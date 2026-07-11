@@ -53,7 +53,7 @@ app.get('/api/trends', wrap((req, keyword) =>
   getTrends({ keyword, geo: (req.query.geo || '').toString(), hl: 'es' })));
 
 app.get('/api/news', wrap((req, keyword) =>
-  getNews({ keyword, lang: (req.query.lang || 'es').toString() })));
+  getNews({ keyword, lang: (req.query.lang || 'es').toString(), gl: (req.query.region || 'PE').toString() })));
 
 app.get('/api/reddit', wrap((req, keyword) =>
   getReddit({ keyword })));
@@ -67,7 +67,7 @@ app.get('/api/all', wrap(async (req, keyword) => {
   const region = (req.query.region || 'PE').toString();
   const [trends, news, reddit, youtube] = await Promise.all([
     getTrends({ keyword, geo, hl: 'es' }),
-    getNews({ keyword, lang: 'es' }),
+    getNews({ keyword, lang: 'es', gl: region }),
     getReddit({ keyword }),
     getYouTube({ keyword, region }),
   ]);
