@@ -83,6 +83,11 @@ app.get('/api/all', wrap(async (req, keyword) => {
   return { keyword, trends, news, reddit, youtube, sentiment };
 }));
 
+// Health check liviano para el host (Render): no depende de fuentes externas.
+app.get('/healthz', (_req, res) => {
+  res.json({ status: 'ok', uptime: process.uptime() });
+});
+
 // Estado de configuración (qué APIs están en vivo).
 app.get('/api/status', (_req, res) => {
   res.json({

@@ -47,6 +47,30 @@ Todas son opcionales y con planes gratuitos. Colócalas en `.env`:
 
 ---
 
+## ☁️ Desplegar en Render
+
+El repo incluye un **Blueprint** (`render.yaml`) para publicarlo como Web Service
+Node nativo (sin Docker), con una **URL pública** y sin autenticación.
+
+1. En [Render](https://render.com) → **New → Blueprint** y conecta este repositorio.
+2. Render lee `render.yaml`, corre `npm install` y arranca con `npm start`; vigila la
+   app en `/healthz`. Al terminar te da una URL `https://<nombre>.onrender.com`.
+3. **Funciona sin claves:** en producción keyless, cada panel usa su fuente sin API
+   key (Google Trends, Google News RSS, Reddit público, Piped/Invidious, léxico local).
+
+### Agregar claves después (opcional, datos en vivo)
+
+En el servicio → **Environment**, define las variables que quieras
+(`NEWS_API_KEY`, `YOUTUBE_API_KEY`, `REDDIT_CLIENT_ID`, `REDDIT_CLIENT_SECRET`,
+`HF_TOKEN`). Están declaradas en `render.yaml` como opcionales (`sync: false`), así
+que **no** viven en el repo — se cargan a mano en el panel. Al guardarlas, Render
+redeploya y esos paneles pasan a `● en vivo`.
+
+> **Cold start (plan free):** tras ~15 min sin tráfico la app se duerme y el primer
+> request tarda ~30 s en despertar. Se elimina con un plan de pago.
+
+---
+
 ## 🏗️ Arquitectura
 
 ```
@@ -94,6 +118,7 @@ secciones. Cada panel indica su fuente real: `● Google Trends`, `● Wikipedia
 | `GET` | `/api/reddit?keyword=` | Reddit |
 | `GET` | `/api/youtube?keyword=&region=` | YouTube |
 | `GET` | `/api/status` | Qué APIs tienen credenciales configuradas |
+| `GET` | `/healthz` | Health check del host (Render); `200` sin tocar fuentes externas |
 
 ---
 
