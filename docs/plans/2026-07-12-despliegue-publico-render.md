@@ -1,7 +1,7 @@
 # Plan de implementación — Despliegue público del dashboard en Render
 
 - **Fecha:** 2026-07-12
-- **Estado:** propuesta (pendiente de aprobación)
+- **Estado:** aprobado (2026-07-12)
 - **Rama de trabajo:** `claude/project-implementation-dpw8gf`
 
 ---
