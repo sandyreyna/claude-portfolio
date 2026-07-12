@@ -1,7 +1,7 @@
 # Especificación — Despliegue público del dashboard en Render
 
 - **Fecha:** 2026-07-12
-- **Estado:** propuesta (pendiente de aprobación)
+- **Estado:** aprobada (2026-07-12)
 - **Enfoque acordado:** Render (Web Service Node nativo), keyless de arranque
 
 ---

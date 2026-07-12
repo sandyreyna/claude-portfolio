@@ -17,7 +17,8 @@ Si el diff solo toca docs o config sin superficie ejecutable, no hace falta.
 
 ## 1. Recupera el objetivo
 
-Lee el **spec** correspondiente en `docs/specs/` y el **plan** acordado. Extrae de ahí
+Lee el **spec** correspondiente en `docs/specs/` y el **plan** en `docs/plans/`
+(mismo `YYYY-MM-DD-title`, generado por `design-plan`). Extrae de ahí
 el criterio observable de "listo" y el "Comportamiento esperado". Vas a probar contra
 eso, no contra una idea vaga.
 
