@@ -1,0 +1,3 @@
+# Artefactos transitorios generados al correr el skill (no versionar)
+shot-*.png
+last-run.json
