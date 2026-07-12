@@ -92,6 +92,18 @@ Cada panel muestra un badge con su fuente real (`● en vivo` con el nombre, o
 - **Estilo:** sigue el estilo del archivo que editas (misma densidad de
   comentarios, nombres e idioms).
 
+## Skills del proyecto
+
+En `.claude/skills/`:
+
+- **`brainstorming`** — al **iniciar un feature nuevo**. Hace preguntas para
+  eliminar la ambigüedad del objetivo y termina presentando **2–3 enfoques** con
+  sus tradeoffs para que el usuario elija cómo armar el plan. No implementa nada
+  en esta fase.
+- **`revision-final`** — QA del sitio antes de publicar (móvil, botones/enlaces,
+  sin relleno, imágenes) con navegador real; entrega una lista priorizada y no
+  arregla nada hasta aprobación.
+
 ## QA / Verificación
 
 - No hay framework de tests formal. Las funciones puras (parsers de RSS, Piped,
