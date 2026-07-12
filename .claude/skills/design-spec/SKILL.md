@@ -46,11 +46,21 @@ kebab-case y en el idioma del proyecto). Estructura fija, en este orden:
   gráficos, claves solo en backend). Si algo los tensiona, dilo en la spec.
 - Breve y sin relleno. Mejor una tabla o lista clara que párrafos largos.
 
-## 4. Handoff
+## 4. Approval gate (iterar o aprobar)
 
-Al terminar: resume en 2–3 líneas lo que quedó especificado, comparte la ruta del
-documento y pregunta si se aprueba para pasar a plan/implementación. No implementes
-la feature hasta que la spec esté aprobada.
+Al terminar: resume en 2–3 líneas lo que quedó especificado y comparte la ruta del
+documento. Luego **detente en una compuerta de aprobación** — pregunta explícitamente
+(idealmente con AskUserQuestion) entre dos caminos:
+
+- **Iterar la spec** — el usuario pide cambios (alcance, comportamiento, casos borde).
+  Aplícalos sobre el mismo documento y vuelve a esta compuerta. Repite hasta que
+  apruebe. No avances mientras haya cambios pendientes.
+- **Aprobar y continuar** — el usuario da el visto bueno. Marca la spec como aprobada
+  (estado en el encabezado del documento) y encadena con el skill **`design-plan`**
+  para generar el plan de implementación.
+
+No implementes la feature ni pases a `design-plan` hasta que la spec esté **aprobada**
+en esta compuerta.
 
 ## Estilo
 
