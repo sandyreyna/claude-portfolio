@@ -1,0 +1,361 @@
+'use strict';
+
+const PALETTE = ['#6366f1', '#8b5cf6', '#0ea5e9', '#14b8a6', '#f97316',
+                '#e11d48', '#f59e0b', '#22c55e', '#ec4899', '#64748b'];
+
+const $ = (sel, root = document) => root.querySelector(sel);
+const el = (tag, cls, html) => {
+  const n = document.createElement(tag);
+  if (cls) n.className = cls;
+  if (html != null) n.innerHTML = html;
+  return n;
+};
+const esc = (s) => String(s ?? '').replace(/[&<>"]/g, (c) =>
+  ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
+
+function fmtNum(n) {
+  n = Number(n) || 0;
+  if (n >= 1e6) return (n / 1e6).toFixed(1).replace(/\.0$/, '') + 'M';
+  if (n >= 1e3) return (n / 1e3).toFixed(1).replace(/\.0$/, '') + 'K';
+  return String(n);
+}
+function timeAgo(iso) {
+  const d = new Date(iso).getTime();
+  if (!d) return '';
+  const s = (Date.now() - d) / 1000;
+  if (s < 3600) return `hace ${Math.max(1, Math.round(s / 60))} min`;
+  if (s < 86400) return `hace ${Math.round(s / 3600)} h`;
+  return `hace ${Math.round(s / 86400)} d`;
+}
+const badge = (src, provider) => {
+  const live = src && src.startsWith('live');
+  const label = live ? `● ${provider || 'en vivo'}` : '◐ demo';
+  const title = live
+    ? `Datos en vivo desde ${provider || 'la API'}`
+    : 'Datos de demostración (fuente no disponible o sin clave)';
+  return `<span class="src-badge ${live ? 'live' : 'demo'}" title="${esc(title)}">${esc(label)}</span>`;
+};
+
+// ── Theme ─────────────────────────────────────────────
+const savedTheme = localStorage.getItem('mi-theme');
+if (savedTheme) document.documentElement.dataset.theme = savedTheme;
+$('#themeBtn').addEventListener('click', () => {
+  const next = document.documentElement.dataset.theme === 'dark' ? 'light' : 'dark';
+  document.documentElement.dataset.theme = next;
+  localStorage.setItem('mi-theme', next);
+});
+
+// ── API status ────────────────────────────────────────
+async function loadStatus() {
+  try {
+    const s = await fetch('/api/status').then((r) => r.json());
+    const row = $('#statusRow');
+    row.innerHTML = '';
+    const items = [
+      ['Google Trends', s.trends], ['NewsAPI', s.news],
+      ['Reddit', s.reddit], ['YouTube', s.youtube],
+      ['Hugging Face', s.sentiment],
+    ];
+    for (const [name, live] of items) {
+      const p = el('span', `status-pill ${live ? 'live' : 'demo'}`,
+        `<i></i>${esc(name)} · ${live ? 'conectado' : 'sin clave (demo)'}`);
+      p.title = live
+        ? `${name} tiene credenciales configuradas.`
+        : `${name} usará datos de demostración hasta que agregues su clave en .env`;
+      row.appendChild(p);
+    }
+  } catch { /* silencioso */ }
+}
+loadStatus();
+
+// ── Search wiring ─────────────────────────────────────
+const input = $('#keyword');
+const regionSel = $('#region');
+$('#searchBtn').addEventListener('click', run);
+input.addEventListener('keydown', (e) => { if (e.key === 'Enter') run(); });
+document.querySelectorAll('.chip').forEach((c) =>
+  c.addEventListener('click', () => { input.value = c.textContent; run(); }));
+
+async function run() {
+  const keyword = input.value.trim();
+  if (!keyword) { input.focus(); return; }
+  const region = regionSel.value;
+  const geo = regionSel.selectedOptions[0].dataset.geo;
+
+  const board = $('#board');
+  board.innerHTML = `<div class="loading"><div class="spinner"></div>Analizando “${esc(keyword)}”…</div>`;
+  $('#searchBtn').disabled = true;
+
+  try {
+    const url = `/api/all?keyword=${encodeURIComponent(keyword)}&geo=${encodeURIComponent(geo)}&region=${encodeURIComponent(region)}`;
+    const data = await fetch(url).then((r) => r.json());
+    render(data);
+    $('#genTime').textContent = 'Generado ' + new Date().toLocaleString('es-PE');
+  } catch (err) {
+    board.innerHTML = `<div class="loading">No se pudo completar el análisis.<br><small>${esc(err.message)}</small></div>`;
+  } finally {
+    $('#searchBtn').disabled = false;
+  }
+}
+
+// ── Render ────────────────────────────────────────────
+function render(data) {
+  const board = $('#board');
+  board.innerHTML = '';
+  const frag = $('#tpl-dashboard').content.cloneNode(true);
+  board.appendChild(frag);
+
+  renderTrends(data.trends);
+  renderNews(data.news);
+  renderReddit(data.reddit);
+  renderSentiment(data.sentiment);
+  renderYouTube(data.youtube);
+}
+
+function panel(name) { return document.querySelector(`[data-panel="${name}"]`); }
+
+// 1. Trends
+function renderTrends(t) {
+  const p = panel('trends');
+  $('.src-badge', p).outerHTML = badge(t.source, t.provider);
+  drawLineChart($('.line-chart', p), t.timeline || []);
+  drawPetals($('.donut', p), t.related || []);
+
+  const total = (t.related || []).length;
+  $('.donut-center strong', p).textContent = total;
+
+  const list = $('.related-list', p);
+  list.innerHTML = '';
+  (t.related || []).slice(0, 8).forEach((r, i) => {
+    const li = el('li', '',
+      `<span class="swatch" style="background:${PALETTE[i % PALETTE.length]}"></span>` +
+      `<b>${esc(r.query)}</b><span class="val">${esc(r.value)}</span>`);
+    list.appendChild(li);
+  });
+}
+
+function drawLineChart(svg, points) {
+  const W = 640, H = 220, pad = 24;
+  svg.innerHTML = '';
+  if (!points.length) return;
+  const max = Math.max(...points.map((p) => p.value), 1);
+  const stepX = (W - pad * 2) / (points.length - 1 || 1);
+  const x = (i) => pad + i * stepX;
+  const y = (v) => H - pad - (v / max) * (H - pad * 2);
+
+  // gridlines
+  for (let g = 0; g <= 4; g++) {
+    const gy = pad + (g / 4) * (H - pad * 2);
+    svg.appendChild(svgEl('line', { x1: pad, y1: gy, x2: W - pad, y2: gy,
+      stroke: 'var(--line)', 'stroke-width': 1 }));
+  }
+  const line = points.map((p, i) => `${i ? 'L' : 'M'}${x(i)},${y(p.value)}`).join(' ');
+  const area = `${line} L${x(points.length - 1)},${H - pad} L${x(0)},${H - pad} Z`;
+
+  const grad = svgEl('linearGradient', { id: 'gTrend', x1: 0, y1: 0, x2: 0, y2: 1 });
+  grad.appendChild(svgEl('stop', { offset: '0%', 'stop-color': '#6366f1', 'stop-opacity': .35 }));
+  grad.appendChild(svgEl('stop', { offset: '100%', 'stop-color': '#6366f1', 'stop-opacity': 0 }));
+  const defs = svgEl('defs', {}); defs.appendChild(grad); svg.appendChild(defs);
+
+  svg.appendChild(svgEl('path', { d: area, fill: 'url(#gTrend)' }));
+  svg.appendChild(svgEl('path', { d: line, fill: 'none', stroke: '#6366f1',
+    'stroke-width': 2.5, 'stroke-linejoin': 'round', 'stroke-linecap': 'round' }));
+
+  // último punto destacado
+  const last = points.length - 1;
+  svg.appendChild(svgEl('circle', { cx: x(last), cy: y(points[last].value), r: 4,
+    fill: '#fff', stroke: '#6366f1', 'stroke-width': 2.5 }));
+}
+
+// Gráfico de pétalos radiales: cada búsqueda relacionada es un pétalo cuya
+// longitud es proporcional a su valor. Mantiene la paleta definida (PALETTE).
+function drawPetals(svg, related) {
+  svg.innerHTML = '';
+  const cx = 100, cy = 100, inner = 36, maxOuter = 84;
+  const items = (related || []).slice(0, 8);
+
+  if (!items.length) {
+    svg.appendChild(svgEl('circle', { cx, cy, r: inner, fill: 'none',
+      stroke: 'var(--line)', 'stroke-width': 2 }));
+    return;
+  }
+
+  const maxVal = Math.max(...items.map((i) => Number(i.value) || 0), 1);
+  const N = items.length;
+  const gap = 0.12; // separación angular entre pétalos (rad)
+
+  items.forEach((it, i) => {
+    const a0 = (i / N) * 2 * Math.PI + gap / 2 - Math.PI / 2;
+    const a1 = ((i + 1) / N) * 2 * Math.PI - gap / 2 - Math.PI / 2;
+    const val = Number(it.value) || 0;
+    const r1 = inner + (val / maxVal) * (maxOuter - inner);
+    const color = PALETTE[i % PALETTE.length];
+
+    const path = svgEl('path', { d: annularSector(cx, cy, inner, r1, a0, a1),
+      fill: color, class: 'petal', 'stroke-linejoin': 'round' });
+    const tip = svgEl('title', {});
+    tip.textContent = `${it.query}: ${it.value}`;
+    path.appendChild(tip);
+    svg.appendChild(path);
+
+    // valor en la punta del pétalo, en su color
+    const mid = (a0 + a1) / 2;
+    svg.appendChild(Object.assign(
+      svgEl('text', {
+        x: cx + (r1 + 9) * Math.cos(mid), y: cy + (r1 + 9) * Math.sin(mid),
+        'text-anchor': 'middle', 'dominant-baseline': 'central',
+        'font-size': 9, 'font-weight': 700, fill: color,
+      }),
+      { textContent: it.value },
+    ));
+  });
+
+  // hub central (sobre él va el overlay .donut-center con el conteo)
+  svg.appendChild(svgEl('circle', { cx, cy, r: inner - 3,
+    fill: 'var(--panel)', stroke: 'var(--line)', 'stroke-width': 1.5 }));
+}
+
+// Sector anular (pétalo con hueco central) entre radios r0..r1 y ángulos a0..a1.
+function annularSector(cx, cy, r0, r1, a0, a1) {
+  const p = (r, a) => [cx + r * Math.cos(a), cy + r * Math.sin(a)];
+  const [x0, y0] = p(r0, a0), [x1, y1] = p(r1, a0);
+  const [x2, y2] = p(r1, a1), [x3, y3] = p(r0, a1);
+  const large = a1 - a0 > Math.PI ? 1 : 0;
+  return `M${x0},${y0} L${x1},${y1} A${r1},${r1} 0 ${large} 1 ${x2},${y2} ` +
+         `L${x3},${y3} A${r0},${r0} 0 ${large} 0 ${x0},${y0} Z`;
+}
+
+function svgEl(tag, attrs) {
+  const n = document.createElementNS('http://www.w3.org/2000/svg', tag);
+  for (const k in attrs) n.setAttribute(k, attrs[k]);
+  return n;
+}
+
+// 2. News
+function renderNews(n) {
+  const p = panel('news');
+  $('.src-badge', p).outerHTML = badge(n.source, n.provider);
+  const list = $('.news-list', p);
+  list.innerHTML = '';
+  (n.articles || []).slice(0, 10).forEach((a) => {
+    const item = el('a', 'news-item');
+    item.href = a.url || '#';
+    item.target = '_blank'; item.rel = 'noopener';
+    const thumb = a.image
+      ? `<img class="news-thumb" src="${esc(a.image)}" alt="" loading="lazy" onerror="this.replaceWith(Object.assign(document.createElement('div'),{className:'news-thumb',textContent:'📰'}))">`
+      : `<div class="news-thumb">📰</div>`;
+    item.innerHTML = thumb +
+      `<div><h4>${esc(a.title)}</h4>` +
+      `<div class="meta">${esc(a.source || '')} · ${timeAgo(a.publishedAt)}</div></div>`;
+    list.appendChild(item);
+  });
+}
+
+// 3. Reddit
+function renderReddit(rd) {
+  const p = panel('reddit');
+  $('.src-badge', p).outerHTML = badge(rd.source, rd.provider || 'Reddit');
+  const list = $('.reddit-list', p);
+  list.innerHTML = '';
+  (rd.posts || []).slice(0, 10).forEach((post, i) => {
+    const item = el('a', 'reddit-item');
+    item.href = post.url || '#';
+    item.target = '_blank'; item.rel = 'noopener';
+    item.innerHTML =
+      `<div class="reddit-rank">${i + 1}</div>` +
+      `<div class="reddit-body"><h4>${esc(post.title)}</h4>` +
+      `<div class="meta">${esc(post.subreddit)} · ▲ ${fmtNum(post.score)}</div></div>` +
+      `<div class="reddit-comments"><b>${fmtNum(post.comments)}</b><span>coment.</span></div>`;
+    list.appendChild(item);
+  });
+}
+
+// 5. Sentimiento
+const SENTI = {
+  positivo: { color: '#22c55e', emoji: '😊' },
+  neutro: { color: '#94a3b8', emoji: '😐' },
+  negativo: { color: '#ef4444', emoji: '😟' },
+};
+function renderSentiment(s) {
+  const p = panel('sentiment');
+  if (!s) return;
+  $('.src-badge', p).outerHTML = badge(s.source, s.provider);
+
+  // Gauge (semicírculo -1 .. +1)
+  drawGauge($('.gauge', p), s.overall?.score ?? 0);
+  const lbl = s.overall?.label || 'neutro';
+  $('.gauge-label strong', p).textContent = `${SENTI[lbl].emoji} ${lbl}`;
+  $('.gauge-label strong', p).style.color = SENTI[lbl].color;
+  $('.gauge-label span', p).textContent = `${s.total || 0} menciones analizadas`;
+
+  // Desglose
+  const bd = s.breakdown || { positivo: 0, neutro: 0, negativo: 0 };
+  const total = Math.max(1, (bd.positivo || 0) + (bd.neutro || 0) + (bd.negativo || 0));
+  const bars = $('.senti-bars', p);
+  bars.innerHTML = '';
+  ['positivo', 'neutro', 'negativo'].forEach((k) => {
+    const pct = Math.round((bd[k] || 0) / total * 100);
+    bars.appendChild(el('div', 'senti-bar',
+      `<span class="senti-tag">${SENTI[k].emoji} ${k}</span>` +
+      `<span class="senti-track"><span class="senti-fill" style="width:${pct}%;background:${SENTI[k].color}"></span></span>` +
+      `<span class="senti-pct">${bd[k] || 0}</span>`));
+  });
+
+  // Menciones destacadas
+  const m = $('.senti-mentions', p);
+  m.innerHTML = '';
+  if (s.mostPositive) m.appendChild(el('div', 'senti-quote pos',
+    `<span>😊 Más positiva</span><p>${esc(s.mostPositive.text)}</p>`));
+  if (s.mostNegative) m.appendChild(el('div', 'senti-quote neg',
+    `<span>😟 Más negativa</span><p>${esc(s.mostNegative.text)}</p>`));
+  if (!s.mostPositive && !s.mostNegative) m.appendChild(el('div', 'senti-quote',
+    `<p>Sin menciones con carga emocional marcada.</p>`));
+}
+
+function drawGauge(svg, score) {
+  svg.innerHTML = '';
+  const cx = 100, cy = 100, r = 82, w = 20;
+  const pt = (deg) => {
+    const rad = (deg * Math.PI) / 180;
+    return [cx + r * Math.cos(rad), cy - r * Math.sin(rad)];
+  };
+  const zone = (a, b, color) => {
+    const [x0, y0] = pt(a), [x1, y1] = pt(b);
+    svg.appendChild(svgEl('path', {
+      d: `M${x0},${y0} A${r},${r} 0 0 1 ${x1},${y1}`,
+      fill: 'none', stroke: color, 'stroke-width': w, 'stroke-linecap': 'round',
+    }));
+  };
+  // 180°(izq/neg) → 0°(der/pos)
+  zone(179, 122, '#ef4444');
+  zone(120, 62, '#94a3b8');
+  zone(60, 1, '#22c55e');
+
+  // Aguja: score -1..+1  →  180°..0°
+  const clamped = Math.max(-1, Math.min(1, score));
+  const deg = 90 - clamped * 90;
+  const [nx, ny] = (() => { const rad = deg * Math.PI / 180; return [cx + (r - 6) * Math.cos(rad), cy - (r - 6) * Math.sin(rad)]; })();
+  svg.appendChild(svgEl('line', { x1: cx, y1: cy, x2: nx, y2: ny,
+    stroke: 'var(--ink)', 'stroke-width': 3, 'stroke-linecap': 'round' }));
+  svg.appendChild(svgEl('circle', { cx, cy, r: 6, fill: 'var(--ink)' }));
+}
+
+// 4. YouTube
+function renderYouTube(yt) {
+  const p = panel('youtube');
+  $('.src-badge', p).outerHTML = badge(yt.source, yt.provider || 'YouTube');
+  const grid = $('.video-grid', p);
+  grid.innerHTML = '';
+  (yt.videos || []).slice(0, 9).forEach((v) => {
+    const card = el('a', 'video-card');
+    card.href = v.url || '#';
+    card.target = '_blank'; card.rel = 'noopener';
+    const thumb = v.thumbnail
+      ? `<div class="video-thumb" style="padding:0"><img src="${esc(v.thumbnail)}" alt="" loading="lazy" style="width:100%;height:100%;object-fit:cover;border-radius:10px"><span class="play">▶</span></div>`
+      : `<div class="video-thumb"><span class="play">▶</span></div>`;
+    card.innerHTML = thumb +
+      `<h4>${esc(v.title)}</h4>` +
+      `<div class="meta">${esc(v.channel)} · ${fmtNum(v.views)} vistas</div>`;
+    grid.appendChild(card);
+  });
+}

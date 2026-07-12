@@ -1,0 +1,134 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Marketing Intelligence Dashboard</title>
+  <link rel="preconnect" href="https://i.ytimg.com" />
+  <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Crect width='100' height='100' rx='22' fill='%236366f1'/%3E%3Ctext x='50' y='68' font-size='58' text-anchor='middle' fill='white'%3E%E2%97%88%3C/text%3E%3C/svg%3E" />
+  <link rel="stylesheet" href="/styles.css" />
+</head>
+<body>
+  <div class="app">
+    <header class="topbar">
+      <div class="brand">
+        <span class="brand-mark">◈</span>
+        <div>
+          <h1>Marketing Intelligence</h1>
+          <p>Tendencias · Noticias · Conversación · Video</p>
+        </div>
+      </div>
+      <button id="themeBtn" class="icon-btn" title="Cambiar tema">◐</button>
+    </header>
+
+    <section class="searchbar">
+      <div class="field">
+        <span class="field-icon">⌕</span>
+        <input id="keyword" type="text" placeholder="Escribe una palabra a buscar (ej. martech, IA, ecommerce)…" autocomplete="off" />
+      </div>
+      <select id="region" title="Región">
+        <option value="PE" data-geo="PE">🇵🇪 Perú</option>
+        <option value="MX" data-geo="MX">🇲🇽 México</option>
+        <option value="ES" data-geo="ES">🇪🇸 España</option>
+        <option value="AR" data-geo="AR">🇦🇷 Argentina</option>
+        <option value="CO" data-geo="CO">🇨🇴 Colombia</option>
+        <option value="US" data-geo="US">🇺🇸 EE.UU.</option>
+        <option value="" data-geo="">🌎 Mundial</option>
+      </select>
+      <button id="searchBtn" class="primary">Analizar</button>
+    </section>
+
+    <div id="statusRow" class="status-row" aria-live="polite"></div>
+
+    <main id="board" class="board">
+      <!-- Estado inicial -->
+      <div id="empty" class="empty">
+        <div class="empty-art">◕◔</div>
+        <h2>Ingresa una palabra clave para comenzar</h2>
+        <p>El dashboard reunirá tendencias de búsqueda, noticias del sector,
+           los temas más comentados y los videos más populares en una sola vista.</p>
+        <div class="suggests">
+          <button class="chip">martech</button>
+          <button class="chip">inteligencia artificial</button>
+          <button class="chip">ecommerce</button>
+          <button class="chip">influencer marketing</button>
+        </div>
+      </div>
+    </main>
+
+    <footer class="foot">
+      <span>Datos: Google Trends · NewsAPI · Reddit · YouTube · Hugging Face</span>
+      <span id="genTime"></span>
+    </footer>
+  </div>
+
+  <template id="tpl-dashboard">
+    <div class="grid">
+      <!-- 1. Tendencias -->
+      <article class="panel span-2" data-panel="trends">
+        <div class="panel-head">
+          <h3><span class="dot dot-1"></span>Tendencias de búsqueda</h3>
+          <span class="src-badge"></span>
+        </div>
+        <div class="trends-body">
+          <div class="chart-wrap"><svg class="line-chart" viewBox="0 0 640 220" preserveAspectRatio="none"></svg></div>
+          <div class="related">
+            <div class="donut-wrap">
+              <svg class="donut" viewBox="0 0 200 200"></svg>
+              <div class="donut-center"><strong></strong><span>temas</span></div>
+            </div>
+            <ul class="related-list"></ul>
+          </div>
+        </div>
+      </article>
+
+      <!-- 2. Noticias -->
+      <article class="panel" data-panel="news">
+        <div class="panel-head">
+          <h3><span class="dot dot-2"></span>Noticias del sector</h3>
+          <span class="src-badge"></span>
+        </div>
+        <div class="news-list scroll"></div>
+      </article>
+
+      <!-- 3. Reddit -->
+      <article class="panel" data-panel="reddit">
+        <div class="panel-head">
+          <h3><span class="dot dot-3"></span>Temas más comentados</h3>
+          <span class="src-badge"></span>
+        </div>
+        <ul class="reddit-list scroll"></ul>
+      </article>
+
+      <!-- 5. Sentimiento -->
+      <article class="panel span-2" data-panel="sentiment">
+        <div class="panel-head">
+          <h3><span class="dot dot-5"></span>Sentimiento del mercado</h3>
+          <span class="src-badge"></span>
+        </div>
+        <div class="senti-body">
+          <div class="gauge-wrap">
+            <svg class="gauge" viewBox="0 0 200 118"></svg>
+            <div class="gauge-label"><strong></strong><span></span></div>
+          </div>
+          <div class="senti-breakdown">
+            <div class="senti-bars"></div>
+            <div class="senti-mentions"></div>
+          </div>
+        </div>
+      </article>
+
+      <!-- 4. YouTube -->
+      <article class="panel span-2" data-panel="youtube">
+        <div class="panel-head">
+          <h3><span class="dot dot-4"></span>Videos más populares</h3>
+          <span class="src-badge"></span>
+        </div>
+        <div class="video-grid scroll"></div>
+      </article>
+    </div>
+  </template>
+
+  <script src="/app.js"></script>
+</body>
+</html>
